@@ -21,7 +21,7 @@ using std::stringstream;
 
 size_t MAXLEN = 10000;
 
-int countlines_getline(ifstream& istr) {
+int countlines_getline(std::istream& istr) {
     unsigned long long len_ctr = 0;
     unsigned long long newl_ctr = 0;
     string buffer;
@@ -35,7 +35,7 @@ int countlines_getline(ifstream& istr) {
     return newl_ctr + len_ctr;
 }
 
-int countlines_read(ifstream& istr) {
+int countlines_read(std::istream& istr) {
     unsigned long long len_ctr = 0;
     unsigned long long newl_ctr = 0;
     std::ostringstream buf;
@@ -50,9 +50,7 @@ int countlines_read(ifstream& istr) {
     return newl_ctr + len_ctr;
 }
 
-int countlines_memory(ifstream& istr) {
-    unsigned long long len_ctr = 0;
-    unsigned long long newl_ctr = 0;
+int countlines_memory(std::istream& istr) {
     string buffer;
 
     // get length of file to resize buffer
@@ -69,8 +67,7 @@ int countlines_memory(ifstream& istr) {
     return newl_ctr + len_ctr;
 }
 
-int countlines_itr(ifstream& istr) {
-    unsigned long long init = 0;
+int countlines_itr(std::istream& istr) {
     return std::reduce(std::execution::par_unseq, istreambuf_iterator<char>(istr),
                        istreambuf_iterator<char>(), 0,
                        [](const char left, const char right) {
@@ -175,8 +172,33 @@ static void CPPBenchmark(benchmark::State& state, Callable&& func, const char* f
         in_stream.seekg(0);
     }
 }
+
+template <typename Callable>
+static void CPPBenchmarkSS(benchmark::State& state, Callable&& func,
+                           const char* filename) {
+    ifstream in_stream{filename};
+    std::ostringstream oss;
+    oss << in_stream.rdbuf();
+    in_stream.close();
+
+    for (auto _ : state) {
+        // measure the result !!!
+        std::istringstream input{oss.str()};
+        benchmark::DoNotOptimize(func(input));
+        in_stream.clear();
+        in_stream.seekg(0);
+    }
+}
+
 #define RegisterCPP(name, func) \
     benchmark::RegisterBenchmark(name, CPPBenchmark<decltype(func)>, func, argv[1]);
+
+#define RegisterCPPWithSS(name, func)                                                    \
+    {                                                                                    \
+        benchmark::RegisterBenchmark(name, CPPBenchmark<decltype(func)>, func, argv[1]); \
+        benchmark::RegisterBenchmark(name " (ss)", CPPBenchmarkSS<decltype(func)>, func, \
+                                     argv[1]);                                           \
+    }
 
 // and for C-style code
 template <typename Callable>
