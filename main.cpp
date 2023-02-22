@@ -37,8 +37,7 @@ void countlines_getline(std::istream& istr) {
 void countlines_read(std::istream& istr) {
     std::ostringstream buf;
     buf << istr.rdbuf();
-    string buffer{std::move(buf.str())};
-    benchmark::DoNotOptimize(buffer);
+    benchmark::DoNotOptimize(buf);
 }
 
 void countlines_memory(std::istream& istr) {
