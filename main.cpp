@@ -79,21 +79,23 @@ extern "C" {
 // Driver code
 int countlines_c_getline(const char* filename) {
     FILE* ptr;
-    char* buffer;
-    buffer = (char*)malloc(MAXLEN * sizeof(char));
     unsigned long long ctr = 0;
 
     // Opening file in reading mode
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
+        return -1;
     }
+
+    std::size_t len = MAXLEN;
+    char* buffer = (char*)malloc(len * sizeof(char));
 
     // Printing what is written in file
     // character by character using loop.
     do {
-        getline(&buffer, &MAXLEN, ptr);
-        ctr += strlen(buffer) + (buffer[MAXLEN - 1] == '\n');
+        getline(&buffer, &len, ptr);
+        ctr += strlen(buffer) + (buffer[len - 1] == '\n');
         // Checking if character is not EOF.
         // If it is EOF stop reading.
     } while (!feof(ptr));
@@ -113,6 +115,7 @@ int countlines_c_char(const char* filename) {
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
+        return -1;
     }
 
     // Printing what is written in file
@@ -138,23 +141,23 @@ int countlines_c_in_memory(const char* filename) {
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
+        return -1;
     }
 
     // get len of bufferif (f)
-    if (ptr) {
-        fseek(ptr, 0, SEEK_END);
-        length = ftell(ptr);
-        fseek(ptr, 0, SEEK_SET);
-        buffer = (char*)malloc(length);
-        if (buffer) {
-            fread(buffer, 1, length, ptr);
+    fseek(ptr, 0, SEEK_END);
+    length = ftell(ptr);
+    fseek(ptr, 0, SEEK_SET);
+    buffer = (char*)malloc(length);
+    if (buffer) {
+        fread(buffer, 1, length, ptr);
+        for (int i = 0; i < length; i++) {
+            ctr += (buffer[i] == '\n');
         }
-        fclose(ptr);
+        free(buffer);
     }
+    fclose(ptr);
 
-    for (int i = 0; i < length; i++) {
-        ctr += (buffer[i] == '\n');
-    }
     ctr += length;
     return ctr;
 }
