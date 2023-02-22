@@ -54,6 +54,8 @@ int countlines_read(std::istream& istr) {
 }
 
 int countlines_memory(std::istream& istr) {
+    unsigned long long len_ctr = 0;
+    unsigned long long newl_ctr = 0;
     string buffer;
 
     // get length of file to resize buffer
