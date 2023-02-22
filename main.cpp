@@ -25,7 +25,12 @@ int countlines_getline(std::istream& istr) {
     unsigned long long len_ctr = 0;
     unsigned long long newl_ctr = 0;
     string buffer;
-    buffer.reserve(std::filesystem::file_size("./test.txt"));
+
+    // get length of file to reserve space in the buffer
+    istr.seekg(0, std::ios::end);
+    buffer.reserve(istr.tellg());
+    istr.seekg(0);
+
     while (std::getline(istr, buffer, '\n')) {
         len_ctr += buffer.size();
         newl_ctr += 1;
