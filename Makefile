@@ -1,7 +1,7 @@
 size=10M
 BUILD_DIR=build
 PRGM=main
-FLAGS=-O3 -g -isystem benchmark/include -Lbenchmark/build/src -lbenchmark -lpthread -pedantic -Wall -Wextra -Wfloat-equal -Wundef  -Wshadow=local -Wpointer-arith -Wcast-align -Wwrite-strings -Wcast-qual -Wunreachable-code
+FLAGS=-O3 -g --std=c++17 -isystem benchmark/include -Lbenchmark/build/src -lbenchmark -lpthread -pedantic -Wall -Wextra -Wfloat-equal -Wundef  -Wshadow=local -Wpointer-arith -Wcast-align -Wwrite-strings -Wcast-qual -Wunreachable-code
 BENCH_FLAGS=--benchmark_time_unit=ms --benchmark_color=true
 
 .PHONY: run run-sanitized perf file clean
