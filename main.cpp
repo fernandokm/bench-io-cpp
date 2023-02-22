@@ -21,9 +21,7 @@ using std::stringstream;
 
 size_t MAXLEN = 10000;
 
-int countlines_getline(std::istream& istr) {
-    unsigned long long len_ctr = 0;
-    unsigned long long newl_ctr = 0;
+void countlines_getline(std::istream& istr) {
     string buffer;
 
     // get length of file to reserve space in the buffer
@@ -32,30 +30,18 @@ int countlines_getline(std::istream& istr) {
     istr.seekg(0);
 
     while (std::getline(istr, buffer, '\n')) {
-        len_ctr += buffer.size();
-        newl_ctr += 1;
+        benchmark::DoNotOptimize(buffer);
     }
-    istr.clear();
-    istr.seekg(0);
-    return newl_ctr + len_ctr;
 }
 
-int countlines_read(std::istream& istr) {
-    unsigned long long len_ctr = 0;
-    unsigned long long newl_ctr = 0;
+void countlines_read(std::istream& istr) {
     std::ostringstream buf;
     buf << istr.rdbuf();
     string buffer{std::move(buf.str())};
-    for (const auto& ch : buffer) {
-        len_ctr += 1;
-        newl_ctr += (ch == '\n');
-    }
-    return newl_ctr + len_ctr;
+    benchmark::DoNotOptimize(buffer);
 }
 
-int countlines_memory(std::istream& istr) {
-    unsigned long long len_ctr = 0;
-    unsigned long long newl_ctr = 0;
+void countlines_memory(std::istream& istr) {
     string buffer;
 
     // get length of file to resize buffer
@@ -65,32 +51,28 @@ int countlines_memory(std::istream& istr) {
 
     // read it into memory
     istr.read(buffer.data(), buffer.size());
-    for (const char ch : buffer) {
-        len_ctr += 1;
-        newl_ctr += (ch == '\n');
-    }
-    return newl_ctr + len_ctr;
+    benchmark::DoNotOptimize(buffer);
 }
 
-int countlines_itr(std::istream& istr) {
-    return std::reduce(std::execution::par_unseq, istreambuf_iterator<char>(istr),
-                       istreambuf_iterator<char>(), 0,
-                       [](const char left, const char right) {
-                           return (left == '\n') + (right == '\n');
-                       });
+void countlines_itr(std::istream& istr) {
+    int result = std::reduce(std::execution::par_unseq, istreambuf_iterator<char>(istr),
+                             istreambuf_iterator<char>(), 0,
+                             [](const char left, const char right) {
+                                 return (left == '\n') + (right == '\n');
+                             });
+    benchmark::DoNotOptimize(result);
 }
 
 extern "C" {
 // Driver code
-int countlines_c_getline(const char* filename) {
+void countlines_c_getline(const char* filename) {
     FILE* ptr;
-    unsigned long long ctr = 0;
 
     // Opening file in reading mode
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
-        return -1;
+        return;
     }
 
     std::size_t len = MAXLEN;
@@ -100,7 +82,7 @@ int countlines_c_getline(const char* filename) {
     // character by character using loop.
     do {
         getline(&buffer, &len, ptr);
-        ctr += strlen(buffer) + (buffer[len - 1] == '\n');
+        benchmark::DoNotOptimize(*buffer);
         // Checking if character is not EOF.
         // If it is EOF stop reading.
     } while (!feof(ptr));
@@ -108,45 +90,42 @@ int countlines_c_getline(const char* filename) {
     // Closing the file
     fclose(ptr);
     free(buffer);
-    return ctr;
 }
 
-int countlines_c_char(const char* filename) {
+void countlines_c_char(const char* filename) {
     FILE* ptr;
     char ch;
-    unsigned long long ctr = 0;
 
     // Opening file in reading mode
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
-        return -1;
+        return;
     }
 
     // Printing what is written in file
     // character by character using loop.
     do {
         ch = fgetc(ptr);
-        ctr += 1 + (ch == '\n');
+        benchmark::DoNotOptimize(ch);
         // Checking if character is not EOF.
         // If it is EOF stop reading.
     } while (!feof(ptr));
 
     // Closing the file
     fclose(ptr);
-    return ctr;
 }
 
-int countlines_c_in_memory(const char* filename) {
+void countlines_c_in_memory(const char* filename) {
     FILE* ptr;
     char* buffer;
-    unsigned long long ctr = 0, length = 0;
+    std::size_t length = 0;
 
     // Opening file in reading mode
     ptr = fopen(filename, "r");
     if (NULL == ptr) {
         printf("file can't be opened \n");
-        return -1;
+        return;
     }
 
     // get len of bufferif (f)
@@ -156,15 +135,10 @@ int countlines_c_in_memory(const char* filename) {
     buffer = (char*)malloc(length);
     if (buffer) {
         fread(buffer, 1, length, ptr);
-        for (int i = 0; i < length; i++) {
-            ctr += (buffer[i] == '\n');
-        }
+        benchmark::DoNotOptimize(*buffer);
         free(buffer);
     }
     fclose(ptr);
-
-    ctr += length;
-    return ctr;
 }
 }  // end of extern
 
@@ -175,7 +149,7 @@ static void CPPBenchmark(benchmark::State& state, Callable&& func, const char* f
     ifstream in_stream{filename};
     for (auto _ : state) {
         // measure the result !!!
-        benchmark::DoNotOptimize(func(in_stream));
+        func(in_stream);
         in_stream.clear();
         in_stream.seekg(0);
     }
@@ -192,7 +166,7 @@ static void CPPBenchmarkSS(benchmark::State& state, Callable&& func,
     for (auto _ : state) {
         // measure the result !!!
         std::istringstream input{oss.str()};
-        benchmark::DoNotOptimize(func(input));
+        func(input);
         in_stream.clear();
         in_stream.seekg(0);
     }
@@ -211,9 +185,8 @@ static void CPPBenchmarkSS(benchmark::State& state, Callable&& func,
 // and for C-style code
 template <typename Callable>
 static void CBenchmark(benchmark::State& state, Callable&& func, const char* filename) {
-    unsigned long long result = 0;
     for (auto _ : state) {
-        benchmark::DoNotOptimize(result = func(filename));
+        func(filename);
     }
 }
 #define RegisterC(name, func) \
