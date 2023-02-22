@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
     RegisterCPP("istreambuf_iterator", countlines_itr);
     RegisterC("C Getline", countlines_c_getline);
     RegisterC("C Char-by-Char", countlines_c_char);
-    RegisterC("C in Memory", countlines_c_char);
+    RegisterC("C in Memory", countlines_c_in_memory);
 
     ::benchmark::Initialize(&argc, argv);
     ::benchmark::RunSpecifiedBenchmarks();
