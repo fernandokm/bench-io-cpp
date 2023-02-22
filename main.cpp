@@ -40,9 +40,7 @@ int countlines_read(std::istream& istr) {
     unsigned long long newl_ctr = 0;
     std::ostringstream buf;
     buf << istr.rdbuf();
-    string buffer;
-    buffer.reserve(std::filesystem::file_size("./test.txt"));
-    buffer = buf.str();
+    string buffer{std::move(buf.str())};
     for (const auto& ch : buffer) {
         len_ctr += 1;
         newl_ctr += (ch == '\n');
